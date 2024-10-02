@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LevelModel;
 use App\Models\UserModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
@@ -23,6 +24,7 @@ class UserController extends Controller
         $activeMenu = 'user';
 
         $level = LevelModel::all();
+
         return view('user.index', [
             'breadcrumb' => $breadcrumb, 
             'page' => $page, 
@@ -34,10 +36,11 @@ class UserController extends Controller
     { 
         $user = UserModel::select('user_id', 'username', 'nama', 'level_id') 
                     ->with('level'); 
+
         if ($request->level_id){
             $user->where('level_id', $request->level_id);
         }
-
+    
         return DataTables::of($user) 
             // menambahkan kolom index / no urut (default nama kolom: DT_RowIndex) 
             ->addIndexColumn()  
@@ -47,7 +50,7 @@ class UserController extends Controller
                 $btn .= '<form class="d-inline-block" method="POST" action="'.url('/user/'.$user->user_id).'">'
                     . csrf_field() . method_field('DELETE') .
                     '<button type="submit" class="btn btn-danger btn-sm" onclick="return confirm(\'Apakah Anda yakin menghapus data ini?\');">Hapus</button></form>';
-
+                
                 return $btn; 
             }) 
             ->rawColumns(['aksi']) // memberitahu bahwa kolom aksi adalah html 
@@ -74,6 +77,13 @@ class UserController extends Controller
             'activeMenu' => $activeMenu
         ]);
     }
+    public function create_ajax()
+    {
+        $level = LevelModel::select('level_id', 'level_nama')->get();
+
+        return view('user.create_ajax')
+        ->with('level', $level);
+    }
     public function store(Request $request)
     {
         $request->validate([
@@ -91,6 +101,36 @@ class UserController extends Controller
         ]);
 
         return redirect('/user')->with('success', 'Data user berhasil disimpan');
+    }
+    public function store_ajax(Request $request) {
+        // Cek apakah request berupa ajax
+        if($request->ajax() || $request->wantsJson()) {
+            $rules = [
+                'level_id' => 'required|integer',
+                'username' => 'required|string|min:3|unique:m_user,username',
+                'nama' => 'required|string|max:100',
+                'password' => 'required|min:6'
+            ];
+    
+            // Menggunakan Validator dari Illuminate\Support\Facades\Validator
+            $validator = Validator::make($request->all(), $rules);
+    
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false, // response status, false: error/gagal, true: berhasil
+                    'message' => 'Validasi Gagal',
+                    'msgField' => $validator->errors(), // pesan error validasi
+                ]);
+            }
+    
+            UserModel::create($request->all());
+            return response()->json([
+                'status' => true,
+                'message' => 'Data user berhasil disimpan'
+            ]);
+        }
+    
+        redirect('/');
     }
     public function show(string $id)
     {
@@ -162,7 +202,7 @@ class UserController extends Controller
         if (!$check) {
             return redirect('/user')->with('error', 'Data User tidak Ditemukan');
         } 
-
+        
         try{
             UserModel::destroy($id);
 
