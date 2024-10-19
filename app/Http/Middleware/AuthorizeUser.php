@@ -17,8 +17,9 @@ class AuthorizeUser
     {
         $user = $request->user();
         if ($user->hasRole($role)) {
-            return $next($request);
-        }
-        abort(403, 'Forbidden. Kamu tidak punya akses ke halaman ini');
+        return $next($request);
     }
+    
+    abort(403, 'Forbiddan. Kamu tidak punya akses ke halaman ini');
+}
 }
