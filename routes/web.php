@@ -7,6 +7,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\StokController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -142,4 +143,15 @@ Route::middleware(['authorize:ADM,MNG'])->group(function(){
             Route::delete('/{id}', [SupplierController::class, 'destroy']); 
         });
     }); 
+    //route stok
+    Route::group(['prefix' =>'stok'],function(){
+        Route::get('/',[StokController::class,'index']);
+        Route::post('/list',[StokController::class, 'list']);
+        Route::get('/create',[StokController::class,'create']);
+        Route::post('/',[StokController::class,'store']);
+        Route::get('/{id}',[StokController::class,'show']);
+        Route::get('/{id}/edit',[StokController::class,'edit']);
+        Route::put('/{id}',[StokController::class,'update']);
+        Route::delete('/{id}',[StokController::class,'destroy']);
+    });
 });
